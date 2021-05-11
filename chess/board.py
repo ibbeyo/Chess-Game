@@ -7,7 +7,7 @@ from .pieces import Pawn, Rook, Bishop, King, Knight, Queen, WHITE_PIECE, BLACK_
 
 WINDOW_WIDTH, WINDOW_HEIGHT = (480, 480)
 BOARD_OFFSET = (-17, -17)
-BOARD_IMAGE = pygame.image.load('./chess/images/board.jpg')
+BOARD_IMAGE = pygame.image.load('./images/board.jpg')
 POSSIBLE_MOVES_BORDER = pygame.Surface((60,60))
 POSSIBLE_MOVES_BORDER.set_alpha(128)
 

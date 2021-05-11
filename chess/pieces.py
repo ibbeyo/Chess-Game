@@ -32,7 +32,7 @@ class Piece(Moves):
         if isinstance(self._load_image, pygame.Surface):
             return self._load_image
         
-        img_path = f'./chess/images/{self.color}/{self.name}.png'
+        img_path = f'./images/{self.color}/{self.name}.png'
         self._load_image = pygame.image.load(img_path)
         return self._load_image
 
