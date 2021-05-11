@@ -1,20 +1,35 @@
 import pygame
-from typing import Tuple
-from collections import namedtuple
+from typing import Tuple, List, Dict, Union
+from dataclasses import dataclass
 
 from .pieces import Pawn, Rook, Bishop, King, Knight, Queen, WHITE_PIECE, BLACK_PIECE
 
 
 WINDOW_WIDTH, WINDOW_HEIGHT = (480, 480)
+
 BOARD_OFFSET = (-17, -17)
 BOARD_IMAGE = pygame.image.load('./images/board.jpg')
+
 POSSIBLE_MOVES_BORDER = pygame.Surface((60,60))
 POSSIBLE_MOVES_BORDER.set_alpha(128)
 
+PIECE_TYPES = Union[Pawn, Rook, Bishop, King, Knight, Queen]
 
-MoveLog = namedtuple('MoveLog', field_names=[
-        'from_node', 'to_node', 'from_tile', 'to_tile', 'piece', 'event'
-    ])
+
+@dataclass
+class MoveLog:
+    from_node   : Tuple[int, int]
+    to_node     : Tuple[int, int]
+    from_tile   : Tuple[int, int]
+    to_tile     : Tuple[int, int]
+    piece       : PIECE_TYPES
+    event       : str
+
+
+@dataclass
+class Node:
+    piece: PIECE_TYPES
+    tile : str
 
 
 class Board:
@@ -23,8 +38,8 @@ class Board:
         self.board = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), 0, 32)
         self.board.fill((220,220,220))
 
-        self.logger: list = list()
-        self.nodes: dict = dict()
+        self.logger: List[MoveLog] = list()
+        self.nodes: Dict[Tuple[int,int], Node] = dict()
         self.valid_moves: list = list()
 
         self.piece = None
@@ -57,27 +72,27 @@ class Board:
         for x, tile_group in enumerate(tiles):
             for y, tile in enumerate(tile_group):
                 node_position = (60*y,60*x)
-                self.nodes.update({node_position: {'piece': None, 'tile': tile}})
+                self.nodes.update({node_position: Node(piece=None, tile=tile)})
 
                 for piece, placement in starting_positions.items():
                     if tile in placement:
                         color = BLACK_PIECE if int(tile[1:]) >= 7 else WHITE_PIECE
                         piece = piece(tile=tile, color=color, position=node_position)
                         self.board.blit(piece.load_image, node_position)
-                        self.nodes[node_position]['piece'] = piece
+                        self.nodes[node_position].piece = piece
 
         self.node_positions = list(self.nodes.keys())
 
     
     def select(self) -> None:
         node_position = self._get_nearest_node_pos()
-        self.piece = self.nodes[node_position]['piece']
+        self.piece = self.nodes[node_position].piece
 
         if self.piece:
             self.piece_is_moving = True
             self.move_validation()
             self.refresh()
-            self.nodes[node_position]['piece'] = None
+            self.nodes[node_position].piece = None
 
             
     def release(self) -> None:
@@ -88,30 +103,30 @@ class Board:
                 self.reset_piece_location()
 
             elif node_position:
-                to_tile = self.nodes[node_position]['tile']
+                to_tile = self.nodes[node_position].tile
 
                 if self.has_en_passant:
-                    self.nodes[self.logger[-1].piece.position]['piece'] = None
+                    self.nodes[self.logger[-1].piece.position].piece = None
 
                 self.logger.append(
                     MoveLog(
-                        from_node=self.piece.position, 
-                        to_node=node_position, 
-                        from_tile=self.piece.tile, 
-                        to_tile=to_tile, 
-                        piece=self.piece,
-                        event='move'
+                        from_node   =self.piece.position, 
+                        to_node     =node_position, 
+                        from_tile   =self.piece.tile, 
+                        to_tile     =to_tile, 
+                        piece       =self.piece,
+                        event       ='move'
                     )
                 )
 
-                self.nodes[self.piece.position]['piece'] = None
+                self.nodes[self.piece.position].piece = None
 
                 if not self.piece.has_moved:
                     self.piece.has_moved = True
 
                 self.piece.position = node_position
                 self.piece.tile = to_tile
-                self.nodes[node_position]['piece'] = self.piece
+                self.nodes[node_position].piece = self.piece
 
         self.reset_board_movement()
         self.refresh()
@@ -129,7 +144,7 @@ class Board:
         node_position = self._get_nearest_node_pos()
         if any([
             self.whos_turn() != self.piece.color,
-            self.piece == self.nodes[node_position]['piece'],
+            self.piece == self.nodes[node_position].piece,
             node_position not in self.valid_moves
         ]):
             return False
@@ -151,7 +166,7 @@ class Board:
                 if pos in self.node_positions:
                     self.valid_moves.append(pos)
 
-                    if other := self.nodes[pos]['piece']:
+                    if other := self.nodes[pos].piece:
                         
                         if self.piece.color == other.color:
                             self.valid_moves.remove(pos)
@@ -182,13 +197,13 @@ class Board:
     def undo_move(self) -> None:
         if self.logger:
             move = self.logger[-1]
-            self.nodes[move.to_node]['piece'] = None
+            self.nodes[move.to_node].piece = None
 
             piece = move.piece
             piece.position = move.from_node
             piece.tile = move.from_tile
 
-            self.nodes[move.from_node]['piece'] = piece
+            self.nodes[move.from_node].piece = piece
 
             del self.logger[-1]
 
@@ -196,7 +211,7 @@ class Board:
 
 
     def reset_piece_location(self) -> None:
-        self.nodes[self.piece.position]['piece'] = self.piece
+        self.nodes[self.piece.position].piece = self.piece
 
         
     def reset_board_movement(self) -> None:
@@ -219,8 +234,8 @@ class Board:
     def refresh(self) -> None:
         self.__draw_board()
         for node in self.nodes.values():
-            if node['piece']:
-                self.board.blit(node['piece'].load_image, node['piece'].position)
+            if node.piece:
+                self.board.blit(node.piece.load_image, node.piece.position)
 
         if self.valid_moves:
             for area in self.valid_moves:
