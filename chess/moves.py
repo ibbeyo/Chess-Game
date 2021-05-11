@@ -58,6 +58,5 @@ class Moves:
 
 
     def all(self) -> dict:
-        print(self.diagonal_pattern)
         _all = list(self.diagonals().values()) + list(self.cross().values())
         return {n: m for n, m in enumerate(_all)}
