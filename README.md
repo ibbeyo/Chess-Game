@@ -2,7 +2,4 @@ Work in progess...
 
 ToDo:
 
--checks
--checkmates
--promotions
--castle
+-- Add Checks, Checkmates, Promotions, Castle
