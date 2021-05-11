@@ -116,10 +116,6 @@ class Board:
         self.reset_board_movement()
         self.refresh()
 
-        for i in self.logger:
-            print(i)
-        print('__________________________')
-
 
     def release_validation(self) -> Tuple[int, int] or bool:
         '''
