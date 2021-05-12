@@ -16,7 +16,6 @@ class Piece(Moves):
         self.has_moved: bool = False
         self._load_image: pygame.Surface = None
 
-
     @property
     def x(self):
         return self.position[0]
@@ -35,7 +34,7 @@ class Piece(Moves):
         img_path = f'./images/{self.color}/{self.name}.png'
         self._load_image = pygame.image.load(img_path)
         return self._load_image
-
+    
 
     def notation(self):
         return self.name[:1]
@@ -74,6 +73,10 @@ class Rook(Piece):
         self.name: str = 'Rook'
 
 
+    def can_castle(self):
+        return False if self.has_moved else True
+
+
     def get_moves(self) -> dict:
         return self.cross()
 
@@ -107,10 +110,20 @@ class King(Piece):
         super().__init__(tile, color, position)
         self.name: str = 'King'
         self.max_move = 1
-        
+
+    
+    def can_castle(self):
+        return False if self.has_moved else True
+
 
     def get_moves(self) -> dict:
-        return self.all()
+        _diagonals = list(self.diagonals().values())
+        _cross = self.cross()
+        if not self.has_moved:
+            _cross[2].append(self.left(2))
+            _cross[3].append(self.right(2))
+
+        return {n: m for n, m in enumerate(_diagonals + list(_cross.values()))}
 
 
 class Queen(Piece):
@@ -120,4 +133,6 @@ class Queen(Piece):
 
 
     def get_moves(self) -> dict:
-        return self.all()
+        _diagonals = list(self.diagonals().values())
+        _cross = list(self.cross().values())
+        return {n: m for n, m in enumerate(_diagonals + _cross)}

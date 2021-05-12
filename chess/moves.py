@@ -55,8 +55,3 @@ class Moves:
                 ]
             })
         return moves
-
-
-    def all(self) -> dict:
-        _all = list(self.diagonals().values()) + list(self.cross().values())
-        return {n: m for n, m in enumerate(_all)}
