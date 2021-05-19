@@ -6,49 +6,41 @@ pygame.init()
 pygame.display.set_caption('Chess')
 
 board = Board()
-board.new_game()
+board.new_game(white=True)
 
 fps = pygame.time.Clock()
 
 is_running = True
 while is_running:
-    
-    for event in pygame.event.get():
 
+    for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
             is_running = False
 
         elif event.type == pygame.ACTIVEEVENT:
-            if event.gain == 0 and board.piece_is_moving:
-                board.reset_piece_location()
-                board.reset_board_movement()
+            if event.gain == 0 and board.selected_piece_is_moving:
+                board.reset_piece_state()
+                board.reset_board_state()
                 board.refresh()
-
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                board.update(event_pos=event.pos)
-                board.select()
-
+                board.select(event_position=event.pos)
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
-                board.update(event_pos=event.pos)
-                board.release()
-
+                board.release(event_position=event.pos)
 
         elif event.type == pygame.MOUSEMOTION:
-            if board.piece_is_moving:
-                 board.update(event_pos=event.pos)
-                 board.move()
-
+            if board.selected_piece_is_moving:
+                board.move(event_position=event.pos)
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_BACKSPACE:
-                board.undo_move()
-
-
+                board.move_reset()
+                
+                
     fps.tick(60)
     pygame.display.update()
 

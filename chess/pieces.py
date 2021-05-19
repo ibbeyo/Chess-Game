@@ -1,138 +1,145 @@
 import pygame
 from typing import Tuple
 
-from .moves import Moves
+from .movement import Movement
 
-BLACK_PIECE = 'black'
-WHITE_PIECE = 'white'
+class Colors:
+    BLACK: str = 'black'
+    WHITE: str = 'white'
 
 
-class Piece(Moves):
-    def __init__(self, tile: str, color: str, position: Tuple[int, int]) -> None:
+class Piece(Movement):
+    def __init__(self, tile:str, position:Tuple[int,int]) -> None:
         super().__init__()
+
         self.tile = tile
-        self.color = color
         self.position = position
+        self.starting_tile = tile
+        self.starting_position = position
         self.has_moved: bool = False
+        self.name: str = self.__class__.__name__
+        self.symbol: str = self.name[:1]
+        self.max_move: int = 7
+        self.color = Colors.BLACK if self.rank >= 7 else Colors.WHITE
         self._load_image: pygame.Surface = None
+        self._color: str = None
+
 
     @property
-    def x(self):
-        return self.position[0]
+    def rank(self) -> int:
+        return int(self.tile[1:])
 
-    
+
     @property
-    def y(self):
-        return self.position[1]
+    def file(self) -> str:
+        return self.tile[:1]
 
 
     @property
     def load_image(self) -> pygame.Surface:
         if isinstance(self._load_image, pygame.Surface):
             return self._load_image
-        
+
         img_path = f'./images/{self.color}/{self.name}.png'
         self._load_image = pygame.image.load(img_path)
         return self._load_image
-    
-
-    def notation(self):
-        return self.name[:1]
-
-
-class Pawn(Piece):
-    def __init__(self, tile: str, color: str, position: Tuple[int, int]) -> None:
-        super().__init__(tile, color, position)
-        self.name: str = 'Pawn'
-        self.max_move = 1
-        self.starting_position = self.position[1]
-        self._orient = 'up' if self.starting_position == 360 else 'down'
-        self._reverse_orient = 'down' if self.starting_position == 360 else 'up'
-        self.diagonal_pattern = [('left', self._orient), ('right', self._orient)]
 
 
     def get_moves(self) -> dict:
-        max_move = 1 if self.has_moved else 2
-        moves = self.diagonals()
-        moves.update({
-            len(moves): [
-                getattr(self, self._orient)(i) 
-                for i in range(1, max_move + 1)
-            ]
-        })
+        return
+    
+
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, Piece):
+            if self.color == o.color:
+                return True
+        return False
+
+
+    def __ne__(self, o: object) -> bool:
+        if isinstance(o, Piece):
+            if self.color != o.color:
+                return True
+        return False
+
+
+class Pawn(Piece):
+    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+        super().__init__(tile, position)
+
+        self.symbol = ''
+        self.max_move = 1
+        self.orient = 'up' if self.starting_position[1] == 360 else 'down'
+
+
+    def en_passant_sq(self):
+        reversed_orient = 'down' if self.orient == 'up' else 'up'
+        return getattr(self, reversed_orient)(1)
+
+    
+    def get_moves(self) -> dict:
+        amt = 1 if self.has_moved else 2
+        captures = self.diagonals()
+        moves = {
+            self.orient :[getattr(self, self.orient)(i) for i in range(1, amt + 1)],
+            'capture': captures['left%s' % self.orient] + captures['right%s' % self.orient]
+        }
         return moves
 
 
-    def notation(self):
-        return ''
 
+class Knight(Piece):
+    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+        super().__init__(tile, position)
+        
+        self.symbol = 'N'
+
+
+    def get_moves(self) -> dict:
+        return self.lshape()
+
+
+class King(Piece):
+    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+        super().__init__(tile, position)
+
+        self.max_move = 1
+
+    
+    def get_moves(self) -> dict:
+        moves = {**self.cross(), **self.diagonals()}
+        if not self.has_moved:
+            moves.update({
+                'castle': {
+                    'left': self.left(2), 
+                    'right': self.right(2)
+                }
+            })
+        return moves
+        
 
 class Rook(Piece):
-    def __init__(self, tile: str, color: str, position: Tuple[int, int]) -> None:
-        super().__init__(tile, color, position)
-        self.name: str = 'Rook'
-
-
-    def can_castle(self):
-        return False if self.has_moved else True
+    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+        super().__init__(tile, position)
 
 
     def get_moves(self) -> dict:
         return self.cross()
 
 
-class Bishop(Piece):
-    def __init__(self, tile: str, color: str, position: Tuple[int, int]) -> None:
-        super().__init__(tile, color, position)
-        self.name: str = 'Bishop'
+class Queen(Piece):
+    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+        super().__init__(tile, position)
 
+
+    def get_moves(self) -> dict:
+        return {**self.cross(), **self.diagonals()}
+
+
+class Bishop(Piece):
+    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+        super().__init__(tile, position)
     
+
     def get_moves(self) -> dict:
         return self.diagonals()
-
-
-class Knight(Piece):
-    def __init__(self, tile: str, color: str, position: Tuple[int, int]) -> None:
-        super().__init__(tile, color, position)
-        self.name: str = 'Knight'
-    
-
-    def get_moves(self) -> dict:
-        return self.lshape()
-
-
-    def notation(self):
-        return 'N'
-
-
-class King(Piece):
-    def __init__(self, tile: str, color: str, position: Tuple[int, int]) -> None:
-        super().__init__(tile, color, position)
-        self.name: str = 'King'
-        self.max_move = 1
-
-    
-    def can_castle(self):
-        return False if self.has_moved else True
-
-
-    def get_moves(self) -> dict:
-        _diagonals = list(self.diagonals().values())
-        _cross = self.cross()
-        if not self.has_moved:
-            _cross[2].append(self.left(2))
-            _cross[3].append(self.right(2))
-
-        return {n: m for n, m in enumerate(_diagonals + list(_cross.values()))}
-
-
-class Queen(Piece):
-    def __init__(self, tile: str, color: str, position: Tuple[int, int]) -> None:
-        super().__init__(tile, color, position)
-        self.name: str = 'Queen'
-
-
-    def get_moves(self) -> dict:
-        _diagonals = list(self.diagonals().values())
-        _cross = list(self.cross().values())
-        return {n: m for n, m in enumerate(_diagonals + _cross)}
