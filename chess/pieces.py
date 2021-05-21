@@ -82,7 +82,7 @@ class Pawn(Piece):
         captures = self.diagonals()
         moves = {
             self.orient :[getattr(self, self.orient)(i) for i in range(1, amt + 1)],
-            'capture': captures['left%s' % self.orient] + captures['right%s' % self.orient]
+            'capture': captures['left' + self.orient] + captures['right' + self.orient]
         }
         return moves
 
