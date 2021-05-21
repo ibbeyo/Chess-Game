@@ -17,21 +17,11 @@ POSSIBLE_MOVES_BORDER.set_alpha(128)
 
 
 @dataclass
-class Events:
-    move        : int = 1
-    capture     : int = 2
-    en_passant  : int = 3
-    castle      : int = 4
-    promotion   : int = 5
-
-
-@dataclass
 class History:
     from_position   : Tuple[int, int]
     to_position     : Tuple[int, int]
     from_tile       : str
     to_tile         : str
-    event           : int
     main_piece      : Piece
     caputered_piece : Optional[Piece] = None
     castled_piece   : Optional[Piece] = None
@@ -55,14 +45,16 @@ class Board:
         self.history: List[History] = list()
         self.castling_event: Dict[str, Rook] = dict()
         self.enpassant_event: bool = False
-
+        
 
     def new_game(self, white: bool = True) -> None:
         '''Start a New Game. Defaults as White, set False to play as Black.'''
+        self._playing_as_white = white
 
         ranks = range(8,0,-1)
         files = ascii_lowercase[:8]
-        if not white:
+
+        if not self._playing_as_white:
             ranks = range(1,9)
             files = list(reversed(files))
 
@@ -130,9 +122,8 @@ class Board:
     def move_validation(self) -> None:
     
         for orient, positions in self.selected_piece.get_moves().items():
-
+            
             if isinstance(self.selected_piece, King):
-                #King able to castle
                 if orient == 'castle':
                     self.eval_castling(positions)
                     continue
@@ -166,7 +157,6 @@ class Board:
                     self.valid_moves.remove(pos)
 
 
-    
     def move_reset(self):
         if self.history:
             move = self.history[-1]
@@ -181,10 +171,11 @@ class Board:
             if isinstance(move.caputered_piece, Piece):
                 self.nodes[move.caputered_piece.tile] = move.caputered_piece
 
-                if move.event == Events.castle:
+                if isinstance(move.castled_piece, Rook):
                     self.nodes[move.castled_piece.tile] = None
+            else:
+                self.nodes[move.to_tile] = None
 
-            self.nodes[move.to_tile] = None
             del self.history[-1]
 
         self.refresh()
@@ -209,8 +200,13 @@ class Board:
 
     def eval_castling(self, positions: dict) -> bool:
         for direction, position in positions.items():
+
             func = getattr(self.selected_piece, direction)
-            dist = 3 if direction == 'right' else 4
+
+            if self._playing_as_white:
+                dist = 3 if direction == 'right' else 4
+            else:
+                dist = 4 if direction == 'right' else 3
 
             try:
                 for i in range(1, dist):
@@ -239,7 +235,6 @@ class Board:
                 self.valid_moves.append(position)
         
 
-
     def release(self, event_position) -> None:
         position, tile = self.__get_event__(event_position=event_position)
         node = self.nodes[tile]
@@ -260,7 +255,6 @@ class Board:
                         to_position=position,
                         from_tile=self.selected_piece_tile,
                         to_tile=tile,
-                        event=Events.move,
                         main_piece=self.selected_piece,
                         caputered_piece=node
                     )
@@ -271,7 +265,6 @@ class Board:
                     rook = self.nodes[castle['before']['tile']]
 
                     self.history[-1].caputered_piece = Rook(rook.tile, rook.position)
-                    self.history[-1].event = Events.castle
 
                     rook.tile = castle['after']['tile']
                     rook.position = castle['after']['pos']
@@ -282,7 +275,6 @@ class Board:
 
                 elif isinstance(self.selected_piece, Pawn) and self.enpassant_event:
                     self.nodes[self.history[-2].main_piece.tile] = None
-                    self.history[-1].event = Events.en_passant
                     self.history[-1].caputered_piece = self.history[-2].main_piece
 
                 self.selected_piece.position = position
