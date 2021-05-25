@@ -1,9 +1,9 @@
-
 import pygame
 from string import ascii_lowercase
 from typing import Tuple, List, Dict, Optional
 from dataclasses import dataclass
 
+from .movement import Node
 from .pieces import Colors, Piece, Rook, King, Pawn, Queen, Bishop, Knight
 
 
@@ -18,8 +18,8 @@ POSSIBLE_MOVES_BORDER.set_alpha(128)
 
 @dataclass
 class History:
-    from_position   : Tuple[int, int]
-    to_position     : Tuple[int, int]
+    from_position   : Node
+    to_position     : Node
     from_tile       : str
     to_tile         : str
     main_piece      : Piece
@@ -34,17 +34,17 @@ class Board:
 
         self.selected_piece: Piece = None
         self.selected_piece_tile: str = None
-        self.selected_piece_position: Tuple[int, int] = None
+        self.selected_piece_position: Node = None
         self.selected_piece_is_moving: bool = False
 
-        self.valid_moves: List[Tuple[int,int]] = list()
+        self.valid_moves: List[Node] = list()
 
         self.nodes: Dict[str, Piece] = dict()
-        self.position_to_tile: Dict[Tuple[int,int], str] = dict()
+        self.position_to_tile: Dict[Node, str] = dict()
 
         self.history: List[History] = list()
         self.castling_event: Dict[str, Rook] = dict()
-        self.enpassant_event: Tuple[int, int] = None
+        self.enpassant_event: Node = None
         
 
     def new_game(self, white: bool = True) -> None:
@@ -177,7 +177,7 @@ class Board:
                     self.nodes[move.castled_piece.tile] = None
 
             del self.history[-1]
-            
+
         self.refresh()
 
 
@@ -305,7 +305,7 @@ class Board:
         return Colors.BLACK
 
 
-    def __get_event__(self, event_position) -> Tuple[Tuple[int,int], str]:
+    def __get_event__(self, event_position) -> Tuple[Node, str]:
         '''Gets the closest position and tile based on the event position'''
 
         x, y = event_position

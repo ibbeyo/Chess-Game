@@ -1,7 +1,6 @@
 import pygame
-from typing import Tuple
 
-from .movement import Movement
+from .movement import Movement, Node
 
 class Colors:
     BLACK: str = 'black'
@@ -9,7 +8,7 @@ class Colors:
 
 
 class Piece(Movement):
-    def __init__(self, tile:str, position:Tuple[int,int]) -> None:
+    def __init__(self, tile: str, position: Node) -> None:
         super().__init__()
 
         self.tile = tile
@@ -64,7 +63,7 @@ class Piece(Movement):
 
 
 class Pawn(Piece):
-    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+    def __init__(self, tile: str, position: Node) -> None:
         super().__init__(tile, position)
 
         self.symbol = ''
@@ -72,7 +71,7 @@ class Pawn(Piece):
         self.orient = 'up' if self.starting_position[1] == 360 else 'down'
 
 
-    def en_passant_sq(self):
+    def en_passant_sq(self) -> Node:
         reversed_orient = 'down' if self.orient == 'up' else 'up'
         backone = getattr(self, reversed_orient)(1)
         if backone == self.starting_position:
@@ -92,7 +91,7 @@ class Pawn(Piece):
 
 
 class Knight(Piece):
-    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+    def __init__(self, tile: str, position: Node) -> None:
         super().__init__(tile, position)
         
         self.symbol = 'N'
@@ -103,7 +102,7 @@ class Knight(Piece):
 
 
 class King(Piece):
-    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+    def __init__(self, tile: str, position: Node) -> None:
         super().__init__(tile, position)
 
         self.max_move = 1
@@ -122,7 +121,7 @@ class King(Piece):
         
 
 class Rook(Piece):
-    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+    def __init__(self, tile: str, position: Node) -> None:
         super().__init__(tile, position)
 
 
@@ -131,7 +130,7 @@ class Rook(Piece):
 
 
 class Queen(Piece):
-    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+    def __init__(self, tile: str, position: Node) -> None:
         super().__init__(tile, position)
 
 
@@ -140,7 +139,7 @@ class Queen(Piece):
 
 
 class Bishop(Piece):
-    def __init__(self, tile: str, position: Tuple[int, int]) -> None:
+    def __init__(self, tile: str, position: Node) -> None:
         super().__init__(tile, position)
     
 
