@@ -44,7 +44,7 @@ class Board:
 
         self.history: List[History] = list()
         self.castling_event: Dict[str, Rook] = dict()
-        self.enpassant_event: bool = False
+        self.enpassant_event: Tuple[int, int] = None
         
 
     def new_game(self, white: bool = True) -> None:
@@ -168,16 +168,16 @@ class Board:
             move.main_piece.tile = move.from_tile
             self.nodes[move.from_tile] = move.main_piece
 
+            self.nodes[move.to_tile] = None
+
             if isinstance(move.caputered_piece, Piece):
                 self.nodes[move.caputered_piece.tile] = move.caputered_piece
 
                 if isinstance(move.castled_piece, Rook):
                     self.nodes[move.castled_piece.tile] = None
-            else:
-                self.nodes[move.to_tile] = None
 
             del self.history[-1]
-
+            
         self.refresh()
 
 
@@ -192,10 +192,9 @@ class Board:
                         self.selected_piece.right(1) == prev_move.to_position
                     ]):
                         if position == prev_move.main_piece.en_passant_sq():
-                            self.enpassant_event = True
-                            return self.enpassant_event
+                            self.enpassant_event = position
+                            return True
         return False
-
 
 
     def eval_castling(self, positions: dict) -> bool:
@@ -273,9 +272,10 @@ class Board:
                     self.nodes[castle['before']['tile']] = None
                     self.history[-1].castled_piece = rook
 
-                elif isinstance(self.selected_piece, Pawn) and self.enpassant_event:
-                    self.nodes[self.history[-2].main_piece.tile] = None
-                    self.history[-1].caputered_piece = self.history[-2].main_piece
+                elif isinstance(self.selected_piece, Pawn):
+                    if self.enpassant_event == position:
+                        self.nodes[self.history[-2].main_piece.tile] = None
+                        self.history[-1].caputered_piece = self.history[-2].main_piece
 
                 self.selected_piece.position = position
                 self.selected_piece.tile = tile
@@ -294,12 +294,12 @@ class Board:
     def reset_board_state(self):
         self.selected_piece = None
         self.selected_piece_is_moving = False
-        self.enpassant_event = False
+        self.enpassant_event = None
         self.valid_moves.clear()
         self.castling_event.clear()
 
 
-    def whos_turn(self) -> Colors:
+    def whos_turn(self) -> str:
         if len(self.history) % 2 == 0:
             return Colors.WHITE
         return Colors.BLACK
