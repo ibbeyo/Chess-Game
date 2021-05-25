@@ -74,7 +74,10 @@ class Pawn(Piece):
 
     def en_passant_sq(self):
         reversed_orient = 'down' if self.orient == 'up' else 'up'
-        return getattr(self, reversed_orient)(1)
+        backone = getattr(self, reversed_orient)(1)
+        if backone == self.starting_position:
+            return None
+        return backone
 
     
     def get_moves(self) -> dict:
